@@ -1,0 +1,300 @@
+/* ------------------------------------------------------------------
+   Stage 1: the old TV (channels, static, volume)
+   Stage 2: the white room (portrait, flash, terminals)
+   ------------------------------------------------------------------ */
+
+/* ================= Stage 1: TV ================= */
+
+#stage-tv {
+  z-index: 30;
+  color: var(--green);
+  font-family: var(--osd);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* The picture = static canvas + glass. --clear drives the hole that opens from the center. */
+.tv-picture {
+  position: absolute; inset: 0;
+  --clear: -20%;
+  -webkit-mask-image: radial-gradient(circle farthest-corner at 50% 50%, transparent var(--clear), #000 calc(var(--clear) + 16%));
+          mask-image: radial-gradient(circle farthest-corner at 50% 50%, transparent var(--clear), #000 calc(var(--clear) + 16%));
+  transition: opacity .12s linear;
+}
+.tv-picture.switching { filter: brightness(0); }
+
+#tv-static, #off-static {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  image-rendering: pixelated;
+}
+
+/* Scanlines + dark corners, like curved glass */
+.tv-glass {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, .26) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 52%, rgba(0, 0, 0, .6) 100%);
+}
+
+/* --- On-screen display --- */
+
+.tv-channels {
+  position: absolute;
+  left: clamp(12px, 4vw, 56px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex; flex-direction: column;
+  gap: clamp(4px, 1.4vh, 14px);
+  transition: transform .5s cubic-bezier(.6, 0, .9, .3), opacity .45s;
+}
+.tv-ch {
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  color: var(--green);
+  font-size: clamp(30px, 5.4vmin, 58px);
+  line-height: 1.05;
+  letter-spacing: .04em;
+  text-shadow: 0 0 8px rgba(0, 255, 0, .75), 2px 2px 0 rgba(0, 0, 0, .7);
+  opacity: .8;
+}
+.tv-ch:hover { opacity: 1; }
+.tv-ch[aria-pressed="true"] {
+  background: var(--green);
+  color: #000;
+  text-shadow: none;
+  opacity: 1;
+}
+.tv-ch:focus-visible, .tv-bar:focus-visible, .tv-vol-label:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+
+.tv-current {
+  position: absolute;
+  top: clamp(10px, 4.5vh, 52px);
+  right: clamp(16px, 5vw, 72px);
+  font-size: clamp(46px, 9.5vmin, 108px);
+  line-height: 1;
+  letter-spacing: .05em;
+  text-shadow: 0 0 12px rgba(0, 255, 0, .8), 3px 3px 0 rgba(0, 0, 0, .7);
+  transition: transform .5s cubic-bezier(.6, 0, .9, .3), opacity .45s;
+}
+
+.tv-volume {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(18px, 6vh, 64px);
+  transform: translateX(-50%);
+  display: flex; align-items: center;
+  gap: clamp(8px, 1.4vmin, 14px);
+  font-size: clamp(24px, 3.8vmin, 38px);
+  line-height: 1;
+  transition: transform .5s cubic-bezier(.6, 0, .9, .3), opacity .45s;
+}
+.tv-vol-label {
+  min-width: 3.2ch;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--green);
+  text-shadow: 0 0 8px rgba(0, 255, 0, .75), 2px 2px 0 rgba(0, 0, 0, .7);
+}
+.tv-bars { display: flex; gap: clamp(3px, .5vmin, 5px); }
+.tv-bar {
+  width: clamp(9px, 1.3vmin, 13px);
+  height: clamp(22px, 3.6vmin, 36px);
+  padding: 0;
+  border: 0;
+  background: rgba(0, 255, 0, .2);
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, .6);
+}
+.tv-bar.on {
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(0, 255, 0, .7);
+}
+
+.tv-nosignal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  padding: 2px 18px 6px;
+  background: rgba(0, 0, 0, .78);
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tv-nosignal span {
+  display: block;
+  font-size: clamp(34px, 7vmin, 76px);
+  line-height: 1;
+  letter-spacing: .06em;
+  animation: blink 1.2s steps(1) infinite;
+}
+.tv-nosignal small {
+  display: block;
+  font-size: clamp(18px, 2.8vmin, 28px);
+  opacity: .85;
+}
+
+/* --- Right channel found --- */
+
+#stage-tv.found .tv-picture { opacity: .36; }          /* light noise, the site shows through */
+#stage-tv.found .tv-ch,
+#stage-tv.found .tv-bar,
+#stage-tv.found .tv-vol-label { pointer-events: none; }
+
+#stage-tv.leaving .tv-channels { transform: translate(-160%, -50%); opacity: 0; }
+#stage-tv.leaving .tv-current  { transform: translateX(160%); opacity: 0; }
+#stage-tv.leaving .tv-volume   { transform: translate(-50%, 260%); opacity: 0; }
+
+/* A smack on the side of the TV */
+#app.hit { animation: tv-hit .34s cubic-bezier(.3, .6, .3, 1); }
+@keyframes tv-hit {
+  0%   { transform: translate(0, 0) rotate(0); }
+  12%  { transform: translate(-13px, 6px) rotate(-.5deg); }
+  30%  { transform: translate(9px, -4px) rotate(.35deg); }
+  48%  { transform: translate(-5px, 3px) rotate(-.2deg); }
+  68%  { transform: translate(3px, -1px) rotate(.1deg); }
+  100% { transform: none; }
+}
+
+@keyframes blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* ================= Stage 2: white room ================= */
+
+#stage-white {
+  z-index: 10;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* The photo: large, in the middle, dissolving into the white.
+   --top and --h say where the photo sits. The two fades below are measured along the photo with them. */
+.portrait {
+  --top: 20%;
+  --h: min(74%, 120vw);
+  position: absolute; inset: 0;
+  pointer-events: none;
+  filter: brightness(1.06) saturate(.92);           /* only ever brightens, so white stays pure white */
+}
+/* Two copies of the photo, one on top of the other. Each layer is as big as the screen,
+   so nothing is cut off in a straight line at the edge of the picture. */
+.portrait-layer { position: absolute; inset: 0; }
+.portrait img {
+  position: absolute;
+  left: 50%; top: var(--top);
+  height: var(--h); width: auto;
+  max-width: none;
+  transform: translateX(-39%);                      /* puts the head, not the whole photo, in the middle */
+}
+/* The sharp photo fades out between the chin and the shoulders */
+.portrait-sharp {
+  --fade: linear-gradient(to bottom,
+    #000 calc(var(--top) + var(--h) * .5),
+    rgba(0, 0, 0, .45) calc(var(--top) + var(--h) * .65),
+    transparent calc(var(--top) + var(--h) * .82));
+  -webkit-mask-image: var(--fade);
+          mask-image: var(--fade);
+}
+/* The blurred copy only shows from the neck down: the mist the shoulders dissolve into */
+.portrait-haze {
+  --fade: linear-gradient(to bottom,
+    transparent calc(var(--top) + var(--h) * .54),
+    #000 calc(var(--top) + var(--h) * .7),
+    transparent calc(var(--top) + var(--h) * .98));
+  opacity: .7;
+  -webkit-mask-image: var(--fade);
+          mask-image: var(--fade);
+}
+.portrait-haze img { filter: blur(22px); }
+
+/* When the noise clears the photo flares up for a moment, but never disappears */
+#stage-white.flashbang .portrait { animation: flare 2.2s ease-out both; }
+@keyframes flare {
+  0%   { filter: brightness(1.06) saturate(.92); }
+  14%  { filter: brightness(1.45) saturate(.7); }
+  100% { filter: brightness(1.06) saturate(.92); }
+}
+
+#term-layer { position: absolute; inset: 0; }
+
+/* --- Terminal windows --- */
+
+.term {
+  position: absolute;
+  display: flex; flex-direction: column;
+  background: #000;
+  color: var(--green);
+  border: 1px solid var(--green);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, .35);
+  font-family: var(--mono);
+  overflow: hidden;
+}
+.term-bar {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 4px 8px;
+  background: var(--green);
+  color: #000;
+  font-size: 12px; font-weight: 700; line-height: 1.2;
+  white-space: nowrap;
+}
+.term-body {
+  flex: 1;
+  margin: 0;
+  padding: 6px 8px;
+  overflow: hidden;
+  font: inherit;
+  font-size: 12px; line-height: 1.25;
+  white-space: pre;
+}
+
+/* The one that talks to you */
+.term.main {
+  top: clamp(14px, 7vh, 72px);
+  left: clamp(10px, 5vw, 84px);
+  width: clamp(300px, 26vw, 520px);                 /* stays clear of the face in the middle */
+  max-width: calc(100vw - 20px);
+  min-height: 236px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .4);
+}
+.term.main .term-body {
+  position: relative;
+  padding: 14px 16px 18px;
+  font-size: clamp(16px, 2.3vmin, 21px);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  cursor: text;
+}
+.term .line { min-height: 1.5em; }
+.term .cur { animation: blink .8s steps(1) infinite; }
+
+/* Real (invisible) input so phones show a keyboard. Typed text is mirrored into .typed */
+.term-input {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  border: 0; padding: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px;
+  opacity: 0;
+}
+
+@media (max-aspect-ratio: 4/5) {
+  .portrait { --h: min(62%, 120vw); --top: calc(98% - var(--h)); }       /* at the bottom, below the terminal, on phones */
+  .portrait img { transform: translateX(-45%); }
+  .term.main { width: calc(100vw - 20px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #app.hit { animation: none; }
+  .tv-nosignal span, .term .cur { animation-duration: 2s; }
+  #stage-white.flashbang .portrait { animation: none; }
+}

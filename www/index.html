@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f353">
+  <title>George Dimitrakopoulos</title>
+  <meta name="description" content="George Dimitrakopoulos, freelance front-end developer and UI/UX designer in Athens.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 6'%3E%3Cpath fill='%23ececec' d='M0 0h1v6H0z'/%3E%3Cpath fill='%23f5f353' d='M1 0h1v6H1z'/%3E%3Cpath fill='%2312d6dc' d='M2 0h1v6H2z'/%3E%3Cpath fill='%231cc21c' d='M3 0h1v6H3z'/%3E%3Cpath fill='%23e23be2' d='M4 0h1v6H4z'/%3E%3Cpath fill='%23f20000' d='M5 0h1v6H5z'/%3E%3Cpath fill='%234d5bff' d='M6 0h1v6H6z'/%3E%3C/svg%3E">
+  <link rel="preload" href="fonts/anybody-variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body class="booting">
+
+<!-- Switching the set on: a line, static, then the colour bars lift away -->
+<div id="power" aria-hidden="true">
+  <i class="power-line"></i>
+  <canvas class="snow" id="power-snow"></canvas>
+  <div class="power-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <p class="power-osd">CH 01</p>
+</div>
+
+<!-- Static that flashes when the channel changes -->
+<canvas class="snow" id="cut" aria-hidden="true"></canvas>
+
+<canvas id="gl" aria-hidden="true"></canvas>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="screen-fx" aria-hidden="true"></div>
+
+<!-- Left: one colour bar per channel, each fills while you are on it -->
+<nav class="rail rail-left" id="rail" aria-label="Channels"></nav>
+
+<!-- Right: the whole page as one bar -->
+<div class="rail rail-right" aria-hidden="true">
+  <div class="meter"><i class="meter-fill"></i></div>
+  <span class="meter-head" id="meter-head">00%</span>
+</div>
+
+<div class="osd" aria-live="polite"><span id="osd-ch">CH 01</span> <span id="osd-name">George</span></div>
+
+<div id="cursor" aria-hidden="true"><i class="cursor-ring"></i><i class="cursor-dot"></i></div>
+
+<main id="top">
+
+  <!-- CH 01 -->
+  <section class="ch hero" id="ch-1" data-ch="0" aria-labelledby="hero-name">
+    <h1 class="name" id="hero-name"></h1>
+    <div class="hero-foot">
+      <p class="role"><span id="role-text"></span><span class="role-stack" id="role-stack"></span></p>
+      <p class="hero-text" id="hero-text"></p>
+    </div>
+    <p class="hint">Scroll, or press 1 to 7 to change channel</p>
+  </section>
+
+  <!-- CH 02 -->
+  <section class="ch about" id="ch-2" data-ch="1" aria-labelledby="about-title">
+    <h2 class="ch-title" id="about-title" data-glitch>About</h2>
+    <p class="lead" id="about-lead"></p>
+    <div class="about-grid">
+      <figure class="holo" id="holo">
+        <div class="holo-card">
+          <div class="holo-bars"></div>
+          <img id="holo-img" alt="Side profile of George">
+          <div class="holo-foil"></div>
+          <figcaption class="holo-tag"><span id="holo-name"></span><span>CH 02</span></figcaption>
+        </div>
+      </figure>
+      <div class="about-side">
+        <p class="about-more" id="about-more"></p>
+        <dl class="facts" id="facts"></dl>
+        <ul class="stats" id="stats"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- CH 03 -->
+  <section class="ch stack" id="ch-3" data-ch="2" aria-labelledby="stack-title">
+    <h2 class="ch-title" id="stack-title" data-glitch>Stack</h2>
+    <div class="stack-grid">
+      <div class="sphere" id="sphere" aria-label="Skills. Drag to spin." role="img"></div>
+      <div class="stack-side">
+        <p class="stack-note">Drag the ball to spin it. These are the tools I use every week, plus what I picked up running a business.</p>
+        <h3 class="mini-title">Languages I code in</h3>
+        <ul class="langs" id="langs"></ul>
+      </div>
+    </div>
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-row" id="mq-1"></div>
+      <div class="marquee-row reverse" id="mq-2"></div>
+    </div>
+  </section>
+
+  <!-- CH 04: pinned while the cards slide sideways -->
+  <section class="ch work" id="ch-4" data-ch="3" aria-labelledby="work-title">
+    <div class="work-pin">
+      <div class="work-head">
+        <h2 class="ch-title" id="work-title" data-glitch>Work</h2>
+        <p class="work-count"><span id="work-now">1</span> of <span id="work-all">3</span></p>
+      </div>
+      <div class="work-track" id="work-track"></div>
+    </div>
+  </section>
+
+  <!-- CH 05 -->
+  <section class="ch exp" id="ch-5" data-ch="4" aria-labelledby="exp-title">
+    <h2 class="ch-title" id="exp-title" data-glitch>Experience</h2>
+    <div class="slabs" id="slabs"></div>
+  </section>
+
+  <!-- CH 06 -->
+  <section class="ch edu" id="ch-6" data-ch="5" aria-labelledby="edu-title">
+    <h2 class="ch-title" id="edu-title" data-glitch>Education</h2>
+    <div class="path" id="path">
+      <svg class="path-line" id="path-svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="bars-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ececec"/>
+            <stop offset=".17" stop-color="#f5f353"/>
+            <stop offset=".34" stop-color="#12d6dc"/>
+            <stop offset=".5" stop-color="#1cc21c"/>
+            <stop offset=".66" stop-color="#e23be2"/>
+            <stop offset=".83" stop-color="#f20000"/>
+            <stop offset="1" stop-color="#4d5bff"/>
+          </linearGradient>
+        </defs>
+        <path class="path-ghost" id="path-ghost"/>
+        <path class="path-draw" id="path-draw"/>
+      </svg>
+      <ol class="steps" id="steps"></ol>
+    </div>
+  </section>
+
+  <!-- CH 07 -->
+  <section class="ch contact" id="ch-7" data-ch="6" aria-labelledby="contact-title">
+    <h2 class="shout" id="contact-title"></h2>
+    <p class="contact-text" id="contact-text"></p>
+    <div class="contact-links" id="contact-links"></div>
+    <footer class="foot">
+      <button type="button" class="rewind magnet" id="rewind">Back to CH 01</button>
+      <p>Made by George in plain HTML, CSS and JavaScript, with three.js for the 3D. Type <kbd>H</kbd> <kbd>I</kbd> anywhere.</p>
+    </footer>
+  </section>
+</main>
+
+<!-- Certificate picture, when the page is opened on its own -->
+<div class="lightbox" id="lightbox" hidden>
+  <figure>
+    <img id="lightbox-img" alt="">
+    <figcaption id="lightbox-cap"></figcaption>
+  </figure>
+  <button type="button" class="lightbox-close" id="lightbox-close">Close</button>
+</div>
+
+<noscript><p class="noscript">This page needs JavaScript for its animations.</p></noscript>
+
+<script src="../js/content.js"></script>
+<script src="js/data.js"></script>
+<script src="vendor/three.min.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>George Dimitrakopoulos — Portfolio</title>
+  <meta name="description" content="Portfolio of George Dimitrakopoulos, freelance front-end developer and UI/UX designer in Athens.">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect x='5' y='5' width='38' height='28' fill='%23dcd6c4' stroke='%23000' stroke-width='2'/%3E%3Crect x='10' y='10' width='28' height='18' fill='%2312a5aa' stroke='%23000' stroke-width='2'/%3E%3Cpath d='M19 33h10v4H19z' fill='%23b9b29d' stroke='%23000' stroke-width='2'/%3E%3Crect x='8' y='37' width='32' height='6' fill='%23dcd6c4' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E">
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/tv.css">
+  <link rel="stylesheet" href="css/os.css">
+</head>
+<body>
+
+<noscript>
+  <div class="noscript">
+    <h1>George Dimitrakopoulos</h1>
+    <p>Freelance front-end developer. This portfolio is interactive and needs JavaScript to run.</p>
+    <p><a href="https://github.com/G-d1m">GitHub</a></p>
+  </div>
+</noscript>
+
+<div id="app">
+
+  <!-- ============ 2. White room: portrait + terminals ============ -->
+  <section id="stage-white" class="stage" aria-label="Introduction">
+    <div class="portrait">
+      <div class="portrait-layer portrait-haze"><img alt="" aria-hidden="true"></div>
+      <div class="portrait-layer portrait-sharp"><img id="portrait-img" alt="Side profile portrait of George"></div>
+    </div>
+    <div id="term-layer"></div>
+  </section>
+
+  <!-- ============ 1. Old TV: find the right channel ============ -->
+  <section id="stage-tv" class="stage" aria-label="Television">
+    <div class="tv-picture" id="tv-picture">
+      <canvas id="tv-static" aria-hidden="true"></canvas>
+      <div class="tv-glass" aria-hidden="true"></div>
+    </div>
+
+    <p class="tv-nosignal" id="tv-nosignal" hidden>
+      <span>NO SIGNAL</span>
+      <small>try another channel</small>
+    </p>
+
+    <nav class="tv-channels" aria-label="Channels">
+      <button class="tv-ch" type="button" data-ch="1" aria-pressed="true">CH1</button>
+      <button class="tv-ch" type="button" data-ch="2" aria-pressed="false">CH2</button>
+      <button class="tv-ch" type="button" data-ch="3" aria-pressed="false">CH3</button>
+      <button class="tv-ch" type="button" data-ch="4" aria-pressed="false">CH4</button>
+      <button class="tv-ch" type="button" data-ch="5" aria-pressed="false">CH5</button>
+    </nav>
+
+    <div class="tv-current" id="tv-current" aria-live="polite">CH 01</div>
+
+    <div class="tv-volume" role="group" aria-label="Volume">
+      <button class="tv-vol-label" id="tv-mute" type="button" aria-pressed="false" aria-label="Mute sound">VOL</button>
+      <div class="tv-bars" id="tv-bars"></div>
+    </div>
+  </section>
+
+  <!-- ============ 3. The computer: boot, log in, desktop, power off ============ -->
+  <section id="stage-os" class="stage" hidden>
+
+    <!-- Boot -->
+    <div id="os-boot" class="os-screen" hidden>
+      <div class="win active boot-win" role="status">
+        <header class="win-bar"><span class="win-title" id="boot-title">Starting (0%)</span></header>
+        <div class="win-body boot-body">
+          <p>Loading your desktop.</p>
+          <div class="progress" aria-hidden="true"><i></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log in -->
+    <div id="os-login" class="os-screen" hidden>
+      <form class="win active login-win" id="login-form" autocomplete="off" novalidate>
+        <header class="win-bar">
+          <span class="win-title">Welcome</span>
+          <button type="button" class="win-btn" id="login-help" aria-label="Show the hint">?</button>
+          <button type="button" class="win-btn" id="login-close" aria-label="Back to the TV" data-icon="close"></button>
+        </header>
+
+        <div class="login-body">
+          <span class="login-key" data-icon="key"></span>
+          <p class="login-text">Type the password to log in.</p>
+
+          <label for="login-user"><u>U</u>ser name:</label>
+          <input id="login-user" type="text" readonly tabindex="-1">
+
+          <label for="login-pass"><u>P</u>assword:</label>
+          <input id="login-pass" type="password" inputmode="numeric"
+                 autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go">
+
+          <div class="login-under">
+            <button type="button" class="login-hint" id="login-hint" aria-expanded="false">hint</button>
+          </div>
+        </div>
+
+        <footer class="login-foot">
+          <button type="submit" class="btn">OK</button>
+        </footer>
+      </form>
+
+      <button type="button" class="btn login-power" id="login-power">
+        <span data-icon="power"></span> Turn off
+      </button>
+    </div>
+
+    <!-- Desktop (the wallpaper is set in css/os.css) -->
+    <div id="os-desktop" class="os-screen" hidden>
+      <div class="desk-icons" id="desk-icons"></div>
+      <div id="win-layer"></div>
+      <div id="lamp-layer" aria-hidden="true"></div>
+
+      <div id="start-menu" class="start-menu" hidden>
+        <div class="start-head">
+          <span class="avatar" data-icon="user"></span>
+          <span id="start-name">George</span>
+        </div>
+        <div class="start-list" id="start-list"></div>
+        <button type="button" class="start-off" id="start-off">
+          <span data-icon="power"></span> Turn off
+        </button>
+      </div>
+
+      <footer class="taskbar">
+        <button type="button" class="start-btn" id="start-btn" aria-haspopup="true" aria-expanded="false">
+          <span data-icon="logo"></span> Menu
+        </button>
+        <div class="task-list" id="task-list"></div>
+        <time class="clock" id="clock"></time>
+      </footer>
+    </div>
+
+    <!-- Powered off: static + links -->
+    <div id="os-off" class="os-screen" hidden>
+      <canvas id="off-static" aria-hidden="true"></canvas>
+      <div class="tv-glass" aria-hidden="true"></div>
+      <div class="off-links">
+        <a id="off-github" target="_blank" rel="noopener">GITHUB</a>
+        <a id="off-linkedin" target="_blank" rel="noopener">LINKEDIN</a>
+        <button type="button" id="off-restart">turn back on</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="blackout" hidden></div>
+  <div id="blast" aria-hidden="true"><i></i></div>
+</div>
+
+<script src="js/content.js"></script>
+<script src="js/static.js"></script>
+<script src="js/intro.js"></script>
+<script src="js/game.js"></script>
+<script src="js/os.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

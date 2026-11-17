@@ -1,0 +1,545 @@
+/* ------------------------------------------------------------------
+   Stage 3: the computer (boot, log in, desktop, windows, power off).
+   Retro gray look: flat gray panels, blue title bars, beveled buttons.
+   Change the colours in the block below to re-theme the whole thing.
+   ------------------------------------------------------------------ */
+
+#stage-os {
+  --face: #c0c0c0;        /* windows, buttons, taskbar */
+  --light: #f2f2f2;       /* bevel: lit edge */
+  --shade: #4c4c4c;       /* bevel: shadow edge */
+  --mid: #808080;         /* grooves, inactive title bars */
+  --blue: #0100a6;        /* title bars, selection */
+  --blue-dark: #00007c;
+  --paper: #fff;          /* fields and content areas */
+  --ink: #000;
+  --red: #f20000;
+  --bar-h: 40px;          /* taskbar height */
+
+  /* the two bevels everything is built from */
+  --raised: inset 2px 2px 0 var(--light), inset -2px -2px 0 var(--shade);
+  --pressed: inset 2px 2px 0 var(--shade), inset -2px -2px 0 var(--light);
+
+  z-index: 50;
+  overflow: hidden;
+  background: #7f7f7f repeating-conic-gradient(#868686 0% 25%, #797979 0% 50%) 0 0 / 4px 4px;
+  color: var(--ink);
+  font-family: Arial, "IBM Plex Sans", Helvetica, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#stage-os.dark { background: #000; }
+
+.os-screen { position: absolute; inset: 0; }
+
+#stage-os :focus-visible { outline: 1px dotted #000; outline-offset: -5px; }
+#stage-os input:focus-visible { outline: none; }
+
+/* Chunky gray scrollbars */
+#stage-os * { scrollbar-color: var(--face) #dfdfdf; }
+#stage-os ::-webkit-scrollbar { width: 16px; height: 16px; background: #dfdfdf; }
+#stage-os ::-webkit-scrollbar-thumb { background: var(--face); box-shadow: var(--raised); }
+#stage-os ::-webkit-scrollbar-corner { background: var(--face); }
+
+/* ================= Building blocks ================= */
+
+/* A window: gray frame, blue title bar, small square buttons on the right */
+.win {
+  position: absolute;
+  display: flex; flex-direction: column;
+  min-width: 240px; min-height: 150px;
+  padding: 4px;
+  background: var(--face);
+  box-shadow: var(--raised), 0 0 0 1px #000, 3px 3px 0 1px rgba(0, 0, 0, .3);
+}
+.win.max {
+  left: 0 !important; top: 0 !important;
+  width: 100% !important; height: 100% !important;
+}
+.win-bar {
+  flex: none;
+  height: 24px;
+  display: flex; align-items: center; gap: 3px;
+  padding: 0 3px 0 6px;
+  background: var(--mid);                       /* window in the background */
+  color: #d6d6d6;
+  cursor: grab;
+  touch-action: none;
+}
+.win.active .win-bar {
+  background: linear-gradient(90deg, var(--blue-dark), var(--blue) 55%, #1414c4);
+  color: #fff;
+}
+.win-icon { width: 16px; height: 16px; flex: none; margin-right: 2px; }
+.win-icon svg { display: block; width: 100%; height: 100%; }
+.win-title {
+  flex: 1; min-width: 0;
+  font-size: 13px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.win-btn {
+  width: 20px; height: 18px; flex: none;
+  display: grid; place-items: center;
+  padding: 0;
+  border: 0;
+  background: var(--face);
+  box-shadow: inset 1px 1px 0 #fff, inset -1px -1px 0 var(--shade), 0 0 0 1px #000;
+  color: #000;
+  font-size: 13px; font-weight: 700; line-height: 1;
+}
+.win-btn svg { width: 11px; height: 11px; }
+.win-btn:active { box-shadow: inset 1px 1px 0 var(--shade), inset -1px -1px 0 #fff, 0 0 0 1px #000; }
+.win-body { position: relative; flex: 1; min-height: 0; margin-top: 3px; overflow: auto; }
+
+/* Push button */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 84px; height: 30px;
+  padding: 0 14px;
+  border: 0;
+  background: var(--face);
+  box-shadow: var(--raised), 0 0 0 1px #000;
+  color: #000;
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn:active { box-shadow: var(--pressed), 0 0 0 1px #000; padding-top: 2px; }
+
+/* Small square toolbar button */
+.tool-btn {
+  width: 30px; height: 26px; flex: none;
+  display: grid; place-items: center;
+  padding: 0;
+  border: 0;
+  background: var(--face);
+  box-shadow: var(--raised);
+  color: #000;
+}
+.tool-btn svg { width: 16px; height: 16px; }
+.tool-btn:active { box-shadow: var(--pressed); }
+.tool-btn:disabled { color: var(--mid); cursor: default; }
+
+/* Sunken white box: text fields and content areas */
+.field, .fx-path, .browser-address, #login-user, #login-pass {
+  height: 26px;
+  padding: 0 8px;
+  border: 2px solid;
+  border-color: var(--shade) var(--light) var(--light) var(--shade);
+  border-radius: 0;
+  background: var(--paper);
+  color: #000;
+  font: inherit;
+}
+
+/* ================= Boot ================= */
+
+#os-boot, #os-login { display: grid; place-items: center; padding: 16px; }
+
+.boot-win { position: relative; width: min(340px, 100%); min-height: 0; }
+.boot-win .win-bar, .login-win .win-bar, .dialog .win-bar { cursor: default; }
+.boot-body { padding: 18px 16px 20px; }
+.boot-body p { margin: 0 0 10px; }
+.progress {
+  height: 24px;
+  padding: 2px;
+  border: 2px solid;
+  border-color: var(--shade) var(--light) var(--light) var(--shade);
+  background: var(--paper);
+}
+.progress i {
+  display: block;
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--blue-dark) 0 12px, transparent 12px 14px);
+  clip-path: inset(0 100% 0 0);
+  animation: boot-load 2.1s steps(20) .15s forwards;
+}
+@keyframes boot-load { to { clip-path: inset(0 0 0 0); } }
+
+/* ================= Log in ================= */
+
+.login-win { position: relative; width: min(360px, 100%); min-height: 0; }
+.login-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px 12px;
+  align-items: center;
+  padding: 20px 22px 6px;
+}
+.login-key { width: 44px; height: 66px; justify-self: center; }
+.login-key svg { display: block; width: 100%; height: 100%; }
+.login-text { margin: 0; }
+.login-body label { white-space: nowrap; }
+#login-user, #login-pass { width: 100%; min-width: 0; height: 28px; font-size: 16px; }
+#login-user { color: #333; }
+.login-under {
+  grid-column: 2;
+  min-height: 20px;
+  margin-top: -8px;
+}
+.login-hint {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--blue);
+  font-size: 12px;
+  text-decoration: underline;
+}
+.login-hint[aria-expanded="true"] {
+  color: #000;
+  font-size: 14px; font-weight: 700;
+  text-decoration: none;
+}
+.login-foot { display: flex; justify-content: center; gap: 12px; padding: 14px 16px 16px; }
+
+.login-power {
+  position: absolute; left: 14px; bottom: 14px;
+  min-width: 0;
+  gap: 8px;
+  padding: 0 12px 0 6px;
+}
+.login-power span { display: block; width: 20px; height: 20px; }
+.login-power svg { display: block; width: 100%; height: 100%; }
+
+/* ================= Desktop ================= */
+
+#os-desktop { background: #2f86d6 url("../assets/img/wallpaper.jpg") center / cover no-repeat; }
+
+/* The desktop itself: icons are placed and moved by js/os.js, dragging on the empty part draws a selection box */
+.desk-icons {
+  position: absolute;
+  inset: 0 0 var(--bar-h) 0;
+  touch-action: none;
+}
+.desk-icons .item { position: absolute; touch-action: none; }
+.desk-icons.moving .item.selected { z-index: 1; opacity: .8; }
+.select-box {
+  position: absolute;
+  z-index: 2;
+  border: 1px solid #0a2fc0;
+  background: rgba(40, 100, 255, .32);
+  pointer-events: none;
+}
+
+/* An icon with a name under it (desktop and inside folders) */
+.item {
+  width: 96px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 6px 2px 4px;
+  border: 0;
+  background: none;
+  color: #000;
+  text-align: center;
+}
+.item svg { width: 48px; height: 48px; flex: none; }
+.item-thumb {
+  width: 86px; height: 62px; flex: none;
+  object-fit: cover;
+  border: 1px solid #000;
+  background: #fff;
+}
+.item-name { padding: 1px 4px; font-size: 12px; line-height: 1.25; overflow-wrap: anywhere; }
+.item.selected .item-name { background: var(--blue); color: #fff; outline: 1px dotted #fff; outline-offset: -1px; }
+#stage-os .item:focus-visible { outline: none; }
+#stage-os .item:focus-visible .item-name { outline: 1px dotted currentColor; }
+
+.desk-icons .item { color: #fff; }
+.desk-icons .item-name { text-shadow: 1px 1px 0 #000, 0 0 3px rgba(0, 0, 0, .7); }
+.desk-icons .item.selected .item-name { text-shadow: none; }
+
+#win-layer {
+  position: absolute;
+  inset: 0 0 var(--bar-h) 0;
+  z-index: 2;
+  pointer-events: none;                 /* clicks fall through to the desktop icons */
+}
+#win-layer > * { pointer-events: auto; }
+
+/* --- Magic lamp: the strips a window is cut into while it opens, closes or minimizes (see js/os.js) --- */
+
+#lamp-layer {
+  position: absolute; inset: 0;
+  z-index: 5;                           /* over the windows, under the taskbar the lamp pours into */
+  overflow: hidden;
+  pointer-events: none;
+}
+.lamp { position: absolute; inset: 0; }
+.lamp-strip {
+  position: absolute; left: 0; top: 0;
+  overflow: hidden;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.lamp-blank { position: absolute; inset: 0; background: var(--paper); }
+
+/* --- Taskbar --- */
+
+.taskbar {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  z-index: 6;
+  height: var(--bar-h);
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 5px 2px;
+  background: var(--face);
+  box-shadow: inset 0 1px 0 #000, inset 0 3px 0 var(--light);
+}
+.start-btn {
+  height: 30px; flex: none;
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 12px 0 6px;
+  border: 0;
+  background: var(--face);
+  box-shadow: var(--raised), 0 0 0 1px #000;
+  color: #000;
+  font-size: 14px; font-weight: 700;
+}
+.start-btn span { display: block; width: 22px; height: 22px; }
+.start-btn svg { display: block; width: 100%; height: 100%; }
+.start-btn.open, .start-btn:active { box-shadow: var(--pressed), 0 0 0 1px #000; padding-top: 2px; }
+
+.task-list { flex: 1; min-width: 0; display: flex; gap: 4px; overflow: hidden; padding: 1px; }
+.task {
+  height: 30px; min-width: 40px; flex: 0 1 170px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 8px;
+  border: 0;
+  background: var(--face);
+  box-shadow: var(--raised), 0 0 0 1px #000;
+  color: #000;
+  font-size: 12px;
+  overflow: hidden;
+}
+.task svg { width: 16px; height: 16px; flex: none; }
+.task span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.task.active {
+  background: #dcdcdc repeating-conic-gradient(#fff 0% 25%, #c8c8c8 0% 50%) 0 0 / 2px 2px;
+  box-shadow: var(--pressed), 0 0 0 1px #000;
+  font-weight: 700;
+}
+
+.clock {
+  height: 30px; flex: none;
+  display: flex; align-items: center;
+  padding: 0 12px;
+  border: 1px solid;
+  border-color: var(--mid) var(--light) var(--light) var(--mid);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- Menu --- */
+
+.start-menu {
+  position: absolute; left: 4px; bottom: calc(var(--bar-h) - 2px);
+  z-index: 7;
+  width: 240px; max-width: calc(100% - 8px);
+  padding: 4px;
+  background: var(--face);
+  box-shadow: var(--raised), 0 0 0 1px #000, 3px 3px 0 1px rgba(0, 0, 0, .3);
+}
+.start-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px;
+  background: linear-gradient(90deg, var(--blue-dark), var(--blue) 55%, #1414c4);
+  color: #fff;
+  font-weight: 700;
+}
+.avatar { display: block; width: 32px; height: 32px; flex: none; box-shadow: 0 0 0 1px #000; }
+.avatar svg { display: block; width: 100%; height: 100%; }
+.start-list { display: grid; padding: 4px 0; }
+.start-item, .start-off {
+  width: 100%;
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 8px;
+  border: 0;
+  background: none;
+  color: #000;
+  text-align: left;
+}
+.start-item svg { width: 28px; height: 28px; flex: none; }
+.start-item:hover, .start-off:hover,
+.start-item:focus-visible, .start-off:focus-visible { background: var(--blue); color: #fff; outline: none !important; }
+.start-off { border-top: 1px solid var(--mid); box-shadow: inset 0 1px 0 var(--light); padding-top: 8px; }
+.start-off span { display: block; width: 28px; height: 28px; }
+.start-off svg { display: block; width: 100%; height: 100%; }
+
+/* --- Message boxes --- */
+
+.veil {
+  position: absolute; inset: 0;
+  z-index: 30;
+  display: grid; place-items: center;
+  padding: 16px;
+}
+.dialog { position: relative; width: min(330px, 100%); min-height: 0; }
+.dialog-body {
+  display: flex; align-items: center; gap: 16px;
+  padding: 20px 20px 8px;
+  overflow: visible;
+}
+.dialog-icon svg { display: block; width: 44px; height: 44px; }
+.dialog-text strong { display: block; font-size: 14px; }
+.dialog-text p { margin: 4px 0 0; }
+.dialog-foot { display: flex; justify-content: center; gap: 10px; padding: 12px 14px 14px; }
+
+.dialog-body.power-body { justify-content: center; padding: 22px 18px 4px; }
+.power-btn {
+  display: grid; justify-items: center; gap: 8px;
+  padding: 6px 18px;
+  border: 0;
+  background: none;
+  color: #000;
+}
+.power-btn svg { width: 56px; height: 56px; }
+.power-btn:active svg { transform: translate(1px, 1px); }
+
+/* --- Folder window --- */
+
+.fx, .browser { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.fx-bar, .browser-bar {
+  flex: none;
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 4px;
+  padding: 4px;
+  border: 1px solid;
+  border-color: var(--light) var(--mid) var(--mid) var(--light);
+}
+.fx-path, .browser-address {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap; overflow: hidden;
+}
+.fx-path svg { width: 18px; height: 18px; flex: none; }
+.fx-path span { overflow: hidden; text-overflow: ellipsis; }
+.fx-grid {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 4px; align-content: start; justify-items: center;
+  padding: 12px;
+  border: 2px solid;
+  border-color: var(--shade) var(--light) var(--light) var(--shade);
+  background: var(--paper);
+  overflow: auto;
+}
+.fx-status {
+  flex: none;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-color: var(--mid) var(--light) var(--light) var(--mid);
+  font-size: 12px;
+}
+
+/* --- Text file --- */
+
+.note {
+  min-height: 100%;
+  margin: 0;
+  padding: 14px 16px;
+  border: 2px solid;
+  border-color: var(--shade) var(--light) var(--light) var(--shade);
+  background: var(--paper);
+  font: 13px/1.55 "Courier New", Consolas, monospace;
+  white-space: pre-wrap;
+  user-select: text; -webkit-user-select: text;
+}
+.note a { color: var(--blue); }
+
+/* --- Picture --- */
+
+.viewer {
+  position: absolute; inset: 0;
+  border: 2px solid;
+  border-color: var(--shade) var(--light) var(--light) var(--shade);
+  background: #3a3a3a;
+}
+.viewer img {
+  position: absolute; inset: 10px;
+  width: calc(100% - 20px); height: calc(100% - 20px);
+  object-fit: contain;
+}
+
+/* --- Browser --- */
+
+.browser-address { cursor: default; }
+.browser-view {
+  position: relative; flex: 1; min-height: 0;
+  border: 2px solid;
+  border-color: var(--shade) var(--light) var(--light) var(--shade);
+  background: var(--paper);
+}
+.browser-view iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.browser-page { position: absolute; inset: 0; }
+.browser-page.away { visibility: hidden; }             /* the home page waits here, keeping its place, while another site is open */
+.browser-loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; }
+.browser-note {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; justify-items: center; gap: 8px;
+  padding: 20px;
+  text-align: center;
+}
+.browser-note svg { width: 64px; height: 64px; }
+.browser-note h2 { margin: 6px 0 0; font-size: 18px; }
+.browser-note p { max-width: 40ch; margin: 0 0 8px; }
+.browser-out { min-width: 0; height: 26px; flex: none; }
+.dragging iframe { pointer-events: none; }             /* so a dragged window doesn't get stuck on the page inside */
+
+/* --- tv game --- */
+
+.game-page {
+  position: absolute; inset: 0;
+  display: grid; align-content: center; justify-items: center; gap: 8px;
+  padding: 12px;
+  border: 2px solid;
+  border-color: var(--shade) var(--light) var(--light) var(--shade);
+  background: var(--paper);
+}
+.game-canvas {
+  width: min(100%, 640px); height: auto;
+  aspect-ratio: 640 / 200;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.game-help { margin: 0; font-size: 12px; }
+
+/* ================= Powered off ================= */
+
+#os-off { background: #000; }
+.off-links {
+  position: absolute; inset: 0;
+  display: grid; place-content: center; justify-items: center;
+  gap: clamp(10px, 3vh, 26px);
+  font-family: var(--osd);
+}
+.off-links a, .off-links button {
+  padding: 0 18px;
+  border: 0;
+  background: rgba(0, 0, 0, .82);
+  color: var(--green);
+  font: inherit;
+  font-size: clamp(40px, 9vmin, 96px);
+  line-height: 1.05; letter-spacing: .05em;
+  text-decoration: none;
+  text-shadow: 0 0 12px rgba(0, 255, 0, .8);
+}
+.off-links button { margin-top: 3vh; font-size: clamp(20px, 3.4vmin, 32px); }
+.off-links a:hover, .off-links a:focus-visible,
+.off-links button:hover, .off-links button:focus-visible {
+  background: var(--green);
+  color: #000;
+  text-shadow: none;
+  outline: none !important;
+}
+
+/* ================= Small screens ================= */
+
+@media (max-width: 520px) {
+  .item { width: 84px; }
+  .task span { display: none; }
+  .task { flex: 0 0 40px; justify-content: center; padding: 0; }
+  .browser-out { padding: 0 8px; }
+  .login-body { padding: 16px 14px 4px; }
+}
+
