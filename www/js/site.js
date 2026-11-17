@@ -843,7 +843,8 @@
     });
     window.addEventListener("pointerdown", function (e) {
       cursorEl.classList.add("down");
-      if (e.button === 0 && !e.target.closest(".lightbox")) burst(e.clientX, e.clientY);
+      // Mouse only: on phones a tap is how you scroll, so it should not set off a burst
+      if (e.pointerType === "mouse" && e.button === 0 && !e.target.closest(".lightbox")) burst(e.clientX, e.clientY);
     });
     window.addEventListener("pointerup", function () { cursorEl.classList.remove("down"); });
 

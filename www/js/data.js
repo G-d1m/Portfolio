@@ -17,7 +17,7 @@ window.SITE = (function (P) {
   return {
     first: "George",
     last: "Dimitrakopoulos",
-    photo: "../" + (P.photo || "assets/img/me.webp"),
+    photo: "../assets/img/me-card.webp",          // the cut-out photo on the CH 02 card
 
     // One channel per section, in the order of the TV colour bars
     channels: ["George", "About", "Stack", "Work", "Experience", "Education", "Contact"],
