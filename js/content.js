@@ -78,7 +78,7 @@ window.PORTFOLIO = {
     },
     {
       name: "pro-one-goalkeeping",
-      url: "https://pro-one-goalkeeping.georgedimi67.workers.dev",
+      url: "https://pro-one.georged1m.com",
       embed: true,
       readme: [
         "Pro One Goalkeeping",
